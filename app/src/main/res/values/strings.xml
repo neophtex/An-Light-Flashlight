@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">An Light</string>
+    <!-- TODO: Remove or change this placeholder text -->
+
+    <string name="bottom_torch">TORCH</string>
+    <string name="bottom_morse">MORSE</string>
+    <!--string name="bottom_compass">COMPASS</string -->
+
+    <string name="screen_color">Select Color</string>
+
+    <string name="text_morse">Please Type Words</string>
+
+    <string name="settings_about">About</string>
+    <string name="about_feedback">Send Feedback</string>
+    <string name="about_source">Github Source Code</string>
+    <string name="about_support">Support Developer</string>
+    <string name="about_rate">Rate Us</string>
+
+    <string name="setting_github">https://github.com/neophtex/An_Light</string>
+    <string name="setting_rate">https://play.google.com/store/apps/details?id=com.series.anlight</string>
+    <string name="setting_feedback">neophtex@gmail.com</string>
+    <string name="setting_feedback_title">An Light Feedback</string>
+    <string name="setting_support"></string>
+
+    <string name="app_version">1.0.0</string>
+</resources>

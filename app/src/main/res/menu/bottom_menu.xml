@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:title="@string/bottom_torch"
+        android:id="@+id/nav_torch"
+        android:icon="@drawable/ic_bottom_torch">
+
+    </item>
+
+    <item android:title="@string/bottom_morse"
+        android:id="@+id/nav_morse"
+        android:icon="@drawable/ic_bottom_morse">
+
+    </item>
+
+    <!-- item android:title="@string/bottom_compass"
+        android:id="@+id/nav_compass"
+        android:icon="@drawable/ic_bottom_compass" >
+
+    </item -->
+
+</menu>
