@@ -1,0 +1,9 @@
+An Light is a useful flashlight,It quickly and easily turns on the flashlight.
+
+<b>Feature</b>
+
+1.Quick start.
+2.The flashlight work when the screen is off.
+3.Built-in SOS flashlight signal.
+4.Strobe mode
+5.Support Morse Code
