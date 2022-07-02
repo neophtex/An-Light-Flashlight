@@ -20,7 +20,7 @@
     <string name="setting_rate">https://play.google.com/store/apps/details?id=com.series.anlight</string>
     <string name="setting_feedback">neophtex@gmail.com</string>
     <string name="setting_feedback_title">An Light Feedback</string>
-    <string name="setting_support"></string>
+    <string name="setting_support">Support Developer</string>
 
     <string name="app_version">1.0.0</string>
 </resources>
