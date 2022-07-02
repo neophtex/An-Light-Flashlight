@@ -9,4 +9,4 @@ An Light is a useful flashlight,It quickly and easily turns on the flashlight.
 <li>Support Morse Code</li>
 </ol>
 
-<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpg" width="250"/> <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.jpg" width="250"/>
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/01.jpg" width="250"/> <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/02.jpg" width="250"/>
