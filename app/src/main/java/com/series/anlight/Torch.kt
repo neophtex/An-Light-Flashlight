@@ -4,11 +4,10 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.hardware.camera2.CameraManager
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.annotation.RequiresApi
+import com.series.anlight.helper.PrefHelper
+import com.series.anlight.widget.FlashWidgetUpdate
 
 
 class Torch {
@@ -18,10 +17,14 @@ class Torch {
     var speed = 0.0
     var thread: Thread? = null
 
-    fun flashLight(cameraManager: CameraManager?, context: Context?) {
+    private lateinit var prefHelper: PrefHelper
+
+    private var flashWidgetUpdate: FlashWidgetUpdate = FlashWidgetUpdate()
+
+    fun flashLight(cameraManager: CameraManager?, context: Context?, prefHelper: PrefHelper) {
         this.cameraManager = cameraManager
         this.context = context
-        //flashLightStatus = false
+        this.prefHelper = prefHelper
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
@@ -29,11 +32,11 @@ class Torch {
         try {
             val cameraId = cameraManager!!.cameraIdList[0]
             cameraManager!!.setTorchMode(cameraId, true)
-            //flashLightStatus = true
-            //mark button
-        } catch (e: Exception) {
-            //Utils.showToast("Cannot turn flashlight on", Toast.LENGTH_SHORT, context)
+        } catch (_: Exception) {
         }
+        //update flashlight home widget
+
+        context?.let { flashWidgetUpdate.updateWidgets(it.applicationContext) }
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
@@ -41,11 +44,17 @@ class Torch {
         try {
             val cameraId = cameraManager!!.cameraIdList[0]
             cameraManager!!.setTorchMode(cameraId, false)
-            //flashLightStatus = false
-            //mark button
-        } catch (e: Exception) {
-            //Utils.showToast("Cannot turn flashlight on", Toast.LENGTH_LONG, context)
+        } catch (_: Exception) {
         }
+
+        //update flashlight home widget
+        context?.let { flashWidgetUpdate.updateWidgets(it.applicationContext) }
+    }
+
+    fun flashcolose(){
+        flashLightOff()
+        prefHelper.flash = false
+        context?.let { flashWidgetUpdate.updateWidgets(it) }
     }
 
     fun updateSpeed() {
@@ -53,59 +62,18 @@ class Torch {
         speed = 1 / (sos_speed / 100);
     }
 
-    @RequiresApi(Build.VERSION_CODES.M)
-    fun morseToFlash1(morse: String) {
-        val handler = Handler()
-        var delay = 5
-        for (x in morse.indices) {
-            if (morse[x] == '.') {
-                handler.postDelayed({
-                    flashLightOn()
-                    //button.setTextColor(act.getColor(R.color.redAccent))
-                    delay += (200 * speed).toLong().toInt()
-                }, (delay.toLong()))
-                handler.postDelayed({
-                    flashLightOff()
-                    //button.setTextColor(act.getColor(R.color.white))
-                    delay += (200 * speed).toLong().toInt()
-                }, (delay.toLong()))
-            } else if (morse[x] == '-') {
-                handler.postDelayed(Runnable {
-                    flashLightOn()
-                    //button.setTextColor(act.getColor(R.color.redPrimaryDark))
-                    delay += (500 * speed).toLong().toInt()
-                }, (delay.toLong()))
-                handler.postDelayed(Runnable {
-                    flashLightOff()
-                    //button.setTextColor(act.getColor(R.color.white))
-                    delay += (500 * speed).toLong().toInt()
-                }, (delay.toLong()))
-            } else if (morse[x] == ' ') {
-                handler.postDelayed(
-                    Runnable {
-                        delay += (300 * speed).toLong().toInt()
-                    }, (delay.toLong())
-                )
-                handler.postDelayed(
-                    Runnable {
-                        delay += (300 * speed).toLong().toInt()
-                    }, (delay.toLong())
-                )
-            }
-        }
-    }
-
     @SuppressLint("UseCompatLoadingForDrawables")
-    fun strobe(morse: String, status: ImageView) {
-        status.setImageDrawable(context!!.getDrawable(R.drawable.ic_flashlight_on))
+    fun sos(morse: String, status: ImageView) {
+        if(prefHelper.sos){
+            status.setImageDrawable(context!!.getDrawable(R.drawable.ic_flashlight_off))
+        }
+        //sos thread
         thread = object : Thread() {
-            @RequiresApi(Build.VERSION_CODES.M)
             override fun run() {
                 try {
                     val delay = 1000
                     while (true) {
-                        if (thread!!.isInterrupted) break
-                        morseToFlash(morse,status)
+                        sosToFlash(morse,status)      //call sos function
                         sleep(delay.toLong())
                     }
                 } catch (e: Exception) {
@@ -113,22 +81,24 @@ class Torch {
                 }
             }
         }
-        thread!!.start()
+        (this.thread as Thread).start()
     }
 
     @SuppressLint("UseCompatLoadingForDrawables")
-    fun frequency(frequency: Long, status: ImageView) {
-        status.setImageDrawable(context!!.getDrawable(R.drawable.ic_flashlight_on))
+    fun strobe(frequency: Long, status: ImageView) {
+        if(prefHelper.stroboscope){
+            status.setImageDrawable(context!!.getDrawable(R.drawable.ic_flashlight_off))
+        }
+        //strobe thread
         thread = object : Thread() {
-            @RequiresApi(Build.VERSION_CODES.M)
             override fun run() {
                 try {
                     while (true) {
-                        if (thread!!.isInterrupted) break
+                        if(prefHelper.flash&&!prefHelper.stroboscope) thread?.interrupt()
                         flashLightOn()
-                        Thread.sleep(200)
+                        sleep(200)
                         flashLightOff()
-                        Thread.sleep(200)
+                        sleep(200)
                         sleep(frequency)
                     }
                 } catch (e: Exception) {
@@ -136,23 +106,29 @@ class Torch {
                 }
             }
         }
-        thread!!.start()
+        (this.thread as Thread).start()
     }
-
 
     @SuppressLint("UseCompatLoadingForDrawables")
     fun strobocancel() {
-        if (!thread!!.isInterrupted) {
-            thread!!.interrupt();
-            flashLightOff()
+        //interrupt thread
+        if (thread != null) {
+            if (!thread!!.isInterrupted) {
+                thread!!.interrupt();
+                flashLightOff()
+            }
         }
     }
 
-    @SuppressLint("UseCompatLoadingForDrawables")
-    @RequiresApi(Build.VERSION_CODES.M)
-    fun morseToFlash(morse: String, status: ImageView) {
-        status.setImageDrawable(context!!.getDrawable(R.drawable.ic_flashlight_on))
+    @SuppressLint("UseCompatLoadingForDrawables", "SuspiciousIndentation")
+    fun sosToFlash(morse: String, status: ImageView) {
+        if(prefHelper.sos){
+            status.setImageDrawable(context!!.getDrawable(R.drawable.ic_flashlight_off))
+        }
+        //sos thread
         outerloop@for (x in morse.indices) {
+            //interrupt thread when true
+            if (prefHelper.flash&&!prefHelper.sos) thread?.interrupt()
                 if (morse[x] == '.') {
                     flashLightOn()
                     Thread.sleep(200)
@@ -169,38 +145,36 @@ class Torch {
                 if (morse[x] == ' ') {
                     Thread.sleep(300)
                     Thread.sleep(300)
-            }
+                }
         }
     }
 
     @SuppressLint("UseCompatLoadingForDrawables")
-    @RequiresApi(Build.VERSION_CODES.M)
     fun decodeToEnglist(morse: String, status: ImageView) {
         status.setColorFilter(context!!.getColor(R.color.flash_on))
+        //morse code thread
         thread = object : Thread() {
-            @RequiresApi(Build.VERSION_CODES.M)
             override fun run() {
                 try {
                     val delay = 1000
                     while (true) {
-                        if (thread!!.isInterrupted) break
                         for (x in morse.indices) {
                             if (morse[x] == '.') {
                                 flashLightOn()
-                                Thread.sleep(200)
+                                sleep(200)
                                 flashLightOff()
-                                Thread.sleep(200)
+                                sleep(200)
 
                             }
                             if (morse[x] == '-') {
                                 flashLightOn()
-                                Thread.sleep(500)
+                                sleep(500)
                                 flashLightOff()
-                                Thread.sleep(500)
+                                sleep(500)
                             }
                             if (morse[x] == ' ') {
-                                Thread.sleep(300)
-                                Thread.sleep(300)
+                                sleep(300)
+                                sleep(300)
                             }
                         }
                     }
@@ -209,6 +183,6 @@ class Torch {
                 }
             }
         }
-        thread!!.start()
+        (this.thread as Thread).start()
     }
 }

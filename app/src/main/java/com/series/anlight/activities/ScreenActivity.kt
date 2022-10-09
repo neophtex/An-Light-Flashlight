@@ -1,9 +1,5 @@
 package com.series.anlight.activities
 
-import android.R
-import android.annotation.SuppressLint
-import android.app.AlertDialog
-import android.content.DialogInterface
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -11,21 +7,21 @@ import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isGone
-import androidx.core.view.isVisible
 import com.github.dhaval2404.colorpicker.ColorPickerDialog
 import com.github.dhaval2404.colorpicker.model.ColorShape
 import com.series.anlight.databinding.ActivityScreenBinding
+import com.series.anlight.helper.PrefHelper
 
 
 class ScreenActivity : AppCompatActivity() {
     private lateinit var binding: ActivityScreenBinding
 
-    var flashlightEnabled : Boolean = false
+    private lateinit var prefHelper : PrefHelper
+
+    private var bright_display: Boolean = false
+    private var birght_color: Int = 0
 
     private var brightnessBeforeChanged = 0f
-
-    private var mColor = "#FFFFFF"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,34 +32,12 @@ class ScreenActivity : AppCompatActivity() {
 
         setSystemUIVisibility(true)
 
-        supportActionBar?.hide()
-        binding.colorButton.setOnClickListener {
-            ColorPickerDialog
-                .Builder(this)        				// Pass Activity Instance
-                .setTitle("Pick Theme")           	// Default "Choose Color"
-                .setColorShape(ColorShape.SQAURE)   // Default ColorShape.CIRCLE
-                .setDefaultColor(mColor)     // Pass Default Color
-                .setColorListener { color, colorHex ->
-                    // Handle Color Selection
-                    binding.screenLight.setBackgroundColor(color)
-                    println(color)
-                }
-                .show()
-        }
+        prefHelper = PrefHelper(this)
+        bright_display = prefHelper.bright_display
+        birght_color = prefHelper.bright_color
 
-        binding.screenLight.setOnClickListener {
+        binding.screenLight.setBackgroundColor(birght_color)
 
-            if (!flashlightEnabled) {
-                enableFlashlight();
-            } else {
-                disableFlashlight();
-            }
-        }
-
-    }
-
-    @SuppressLint("SetTextI18n")
-    private fun enableFlashlight() {
         val params: WindowManager.LayoutParams = window.attributes
 
         // Save brightness to restore it later
@@ -73,20 +47,23 @@ class ScreenActivity : AppCompatActivity() {
         params.screenBrightness = 1f
         window.attributes = params
 
-        flashlightEnabled = true
+        supportActionBar?.hide()
+        binding.colorButton.setOnClickListener {
+            ColorPickerDialog
+                .Builder(this)
+                .setTitle("Pick Theme")
+                .setColorShape(ColorShape.SQAURE)
+                .setDefaultColor(birght_color)
+                .setColorListener { color, colorHex ->
+                    // Handle Color Selection, Save color to restore it later
+                    prefHelper.bright_color = color
 
-        binding.colorButton.isGone = true
-    }
+                    binding.screenLight.setBackgroundColor(color)
 
-    @SuppressLint("SetTextI18n")
-    private fun disableFlashlight() {
-        val layout: WindowManager.LayoutParams = window.attributes
-        layout.screenBrightness = brightnessBeforeChanged
-        window.attributes = layout
+                }
+                .show()
+        }
 
-        flashlightEnabled = false
-
-        binding.colorButton.isVisible = true
     }
 
     private fun setSystemUIVisibility(hide: Boolean) {
@@ -96,8 +73,7 @@ class ScreenActivity : AppCompatActivity() {
             if (hide) window?.hide(windows) else window?.show(windows)
             // needed for hide, doesn't do anything in show
             window?.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        } else {
-            val view = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+        } else { val view = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
                     View.SYSTEM_UI_FLAG_FULLSCREEN or
                     View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
             window.decorView.systemUiVisibility = if (hide) view else view.inv()

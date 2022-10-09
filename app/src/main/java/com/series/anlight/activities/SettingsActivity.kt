@@ -45,7 +45,6 @@ class SettingsActivity : AppCompatActivity() {
 
             screen.addPreference(about)
 
-            //val support = getPreference(context, R.string.about_support, R.drawable.ic_support)
             val rate = getPreference(context, R.string.about_rate,R.drawable.ic_rate)
             val github = getPreference(context, R.string.about_source, R.drawable.ic_source)
             val feedback = getPreference(context, R.string.about_feedback, R.drawable.ic_feedback)
@@ -53,7 +52,6 @@ class SettingsActivity : AppCompatActivity() {
             about.addPreference(github)
             about.addPreference(rate)
             about.addPreference(feedback)
-            //about.addPreference(support)
 
             preferenceScreen = screen
 

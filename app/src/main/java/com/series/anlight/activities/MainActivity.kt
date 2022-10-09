@@ -4,29 +4,31 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.hardware.camera2.CameraManager
-import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
-import androidx.annotation.RequiresApi
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat.startActivity
-import androidx.core.view.get
-import com.series.anlight.Torch
+import com.series.anlight.MORSE
 import com.series.anlight.R
+import com.series.anlight.Torch
 import com.series.anlight.databinding.ActivityMainBinding
+import com.series.anlight.helper.PrefHelper
+import com.series.anlight.widget.FlashWidgetUpdate
 
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding;
 
-    private var flash: Boolean = false
-    private var sos: Boolean = false
+    private var flash = false
+    private var sos= false
     private var stroboscope = false
 
     private var cameraManager: CameraManager? = null
     private var cameraId: String = ""
 
     private var torch: Torch = Torch()
+
+    private lateinit var prefHelper : PrefHelper
+    private var flashWidgetUpdate: FlashWidgetUpdate = FlashWidgetUpdate()
 
     @SuppressLint("UseCompatLoadingForDrawables")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,8 +48,13 @@ class MainActivity : AppCompatActivity() {
 
         cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
         cameraId = cameraManager!!.cameraIdList[0]
+        prefHelper = PrefHelper(this)
 
-        torch.flashLight(cameraManager, this)
+        prefHelper.flash = false
+        prefHelper.stroboscope = false
+        prefHelper.sos = false
+
+        torch.flashLight(cameraManager, this, prefHelper)
 
         binding.iconSettings.setOnClickListener {
             val morseIntent = Intent(this, SettingsActivity::class.java)
@@ -55,75 +62,99 @@ class MainActivity : AppCompatActivity() {
 
             return@setOnClickListener
         }
+
     }
 
+    private fun refresh(){
+        //update icon state
+
+        Log.e("flash", flash.toString())
+        Log.e("flash-stroboscope", stroboscope.toString())
+        Log.e("flash-", sos.toString())
+
+        if(!prefHelper.flash) {
+            binding.iconFlash.setImageDrawable(this.getDrawable(R.drawable.ic_flashlight_off))
+        }
+        if (prefHelper.flash) {
+            binding.iconFlash.setImageDrawable(this.getDrawable(R.drawable.ic_flashlight_on))
+            //Toast.makeText(context, prefHelper.flash_on.toString(), Toast.LENGTH_LONG).show()
+        }
+        if(!prefHelper.stroboscope){
+            binding.iconStroboscope.setColorFilter(this.getColor(R.color.flash_off))
+        }
+        if(!prefHelper.sos){
+            binding.iconSos.setTextColor(this.getColor(R.color.flash_off))
+        }
+    }
+
+
     private fun torch_listener() {
+
         binding.iconFlash.setOnClickListener {
-            if (!flash) {
-                torch.flashLightOn()
+            if (!prefHelper.flash) {
+                if (prefHelper.sos) {
 
+                    prefHelper.sos = false
+                    torch.strobocancel()
+
+                    binding.iconSos.setTextColor(this.getColor(R.color.flash_off))
+
+                }
+                if (prefHelper.stroboscope) {
+                    prefHelper.stroboscope = false
+                    torch.strobocancel()
+
+                    binding.iconStroboscope.setColorFilter(this.getColor(R.color.flash_off))
+
+                }
                 binding.iconFlash.setImageDrawable(this.getDrawable(R.drawable.ic_flashlight_on))
-
-                flash = true;
+                torch.flashLightOn()
+                prefHelper.flash = true
 
                 return@setOnClickListener
             }
-            if (flash) {
-                if (sos) {
-                    torch.strobocancel()
+            if (prefHelper.flash) {
 
-                    binding.iconFlash.setImageDrawable(this.getDrawable(R.drawable.ic_flashlight_off))
-                    binding.iconSos.setTextColor(this.getColor(R.color.flash_off))
-
-                    flash = false
-                }
-                if (stroboscope) {
-                    torch.strobocancel()
-
-                    binding.iconFlash.setImageDrawable(this.getDrawable(R.drawable.ic_flashlight_off))
-                    binding.iconStroboscope.setColorFilter(this.getColor(R.color.flash_off))
-
-                    flash = false
-                }
                 torch.flashLightOff()
+                prefHelper.flash = false
 
                 binding.iconFlash.setImageDrawable(this.getDrawable(R.drawable.ic_flashlight_off))
 
-                flash = false
-                sos = false
-                stroboscope = false
+                return@setOnClickListener
             }
-
         }
 
         binding.iconSos.setOnClickListener {
-            val morse = "... --- ..."
+            //val morse = "... --- ..."
 
-            if (!sos) {
-                if (stroboscope) {
+            if (!prefHelper.sos) {
+
+                if (prefHelper.stroboscope) {
                     torch.strobocancel()
 
                     binding.iconStroboscope.setColorFilter(this.getColor(R.color.flash_off))
+                    prefHelper.stroboscope = false
+                }
 
-                    stroboscope = false
+                if(prefHelper.flash){
+                    prefHelper.flash = false
                 }
 
                 binding.iconSos.setTextColor(this.getColor(com.series.anlight.R.color.flash_on))
-                torch.strobe(morse, binding.iconFlash)
+                binding.iconFlash.setImageDrawable(this.getDrawable(R.drawable.ic_flashlight_off))
+                torch.sos(MORSE, binding.iconFlash)
 
-                sos = true
-                flash = true
+                prefHelper.sos = true
 
                 return@setOnClickListener
             }
-            if (sos) {
+            if (prefHelper.sos) {
                 torch.strobocancel()
 
                 binding.iconSos.setTextColor(this.getColor(R.color.flash_off))
                 binding.iconFlash.setImageDrawable(this.getDrawable(R.drawable.ic_flashlight_off))
 
-                sos = false
-                flash = false
+                prefHelper.sos = false
 
                 return@setOnClickListener
             }
@@ -131,36 +162,42 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.iconStroboscope.setOnClickListener {
-            if (!stroboscope) {
-                if (sos) {
+
+            if (!prefHelper.stroboscope) {
+
+                if (prefHelper.sos) {
                     torch.strobocancel()
 
                     binding.iconFlash.setImageDrawable(this.getDrawable(R.drawable.ic_flashlight_off))
                     binding.iconSos.setTextColor(this.getColor(R.color.flash_off))
 
-                    sos = false
+                    prefHelper.sos = false
                 }
-                torch.frequency(200L, binding.iconFlash)
 
+                if(prefHelper.flash){
+                    prefHelper.flash = false
+                }
+
+                torch.strobe(200L, binding.iconFlash)
+
+                binding.iconFlash.setImageDrawable(this.getDrawable(R.drawable.ic_flashlight_off))
                 binding.iconStroboscope.setColorFilter(this.getColor(com.series.anlight.R.color.flash_on))
 
-                stroboscope = true
-                flash = true
+                prefHelper.stroboscope = true
 
                 return@setOnClickListener
             }
-            if (stroboscope) {
+
+            if (prefHelper.stroboscope) {
                 torch.strobocancel()
 
                 binding.iconStroboscope.setColorFilter(this.getColor(R.color.flash_off))
                 binding.iconFlash.setImageDrawable(this.getDrawable(R.drawable.ic_flashlight_off))
 
-                stroboscope = false
-                flash = false
+                prefHelper.stroboscope = false
 
                 return@setOnClickListener
             }
-
         }
 
         binding.iconScreen.setOnClickListener {
@@ -174,12 +211,12 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_morse -> {
-                    if (flash) {
+                    if (prefHelper.flash) {
                         torch.flashLightOff()
                         binding.iconFlash.setImageDrawable(this.getDrawable(R.drawable.ic_flashlight_off))
 
                     }
-                    if (sos || stroboscope) {
+                    if (prefHelper.sos || prefHelper.stroboscope) {
                         torch.strobocancel()
                         binding.iconStroboscope.setColorFilter(this.getColor(R.color.flash_off))
                         binding.iconSos.setTextColor(this.getColor(R.color.flash_off))
@@ -196,22 +233,33 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        torch.flashLightOff()
     }
 
     override fun onResume() {
+        refresh()
         super.onResume()
         binding.bottomNavigation.menu.getItem(0).isChecked = true
     }
 
-    override fun onBackPressed() {
-        super.onBackPressed()
-        torch.flashLightOff()
-
-        binding.iconFlash.setImageDrawable(this.getDrawable(R.drawable.ic_flashlight_off))
-
-        flash = false
+    override fun onPause() {
+        super.onPause()
     }
 
+    override fun onStop() {
+        super.onStop()
+    }
+
+    override fun onBackPressed() {
+
+        torch.flashLightOff()
+        prefHelper.flash = false
+
+        super.onBackPressed()
+    }
+
+    private fun releaseCamera() {
+        prefHelper.flash = false
+        torch.flashLightOff()
+    }
 }
 

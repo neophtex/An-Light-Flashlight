@@ -3,16 +3,13 @@ package com.series.anlight.activities
 import android.annotation.SuppressLint
 import android.content.Context
 import android.hardware.camera2.CameraManager
-import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.getSystemService
-import com.series.anlight.Torch
 import com.series.anlight.MorseCode
 import com.series.anlight.R
+import com.series.anlight.Torch
 import com.series.anlight.databinding.ActivityMorseBinding
+import com.series.anlight.helper.PrefHelper
 
 class MorseActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMorseBinding
@@ -27,6 +24,8 @@ class MorseActivity : AppCompatActivity() {
     private var morseCode : String = "... --- ..."
 
     private var code: MorseCode = MorseCode()
+
+    private lateinit var prefHelper: PrefHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,7 +48,9 @@ class MorseActivity : AppCompatActivity() {
 
         cameraId = cameraManager!!.cameraIdList[0]
 
-        torch.flashLight(cameraManager, this)
+        prefHelper = PrefHelper(this)
+
+        torch.flashLight(cameraManager, this, prefHelper)
     }
 
     private fun morse_listener(){
