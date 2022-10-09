@@ -18,17 +18,12 @@ import com.series.anlight.widget.FlashWidgetUpdate
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding;
 
-    private var flash = false
-    private var sos= false
-    private var stroboscope = false
-
     private var cameraManager: CameraManager? = null
     private var cameraId: String = ""
 
     private var torch: Torch = Torch()
 
     private lateinit var prefHelper : PrefHelper
-    private var flashWidgetUpdate: FlashWidgetUpdate = FlashWidgetUpdate()
 
     @SuppressLint("UseCompatLoadingForDrawables")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,16 +63,11 @@ class MainActivity : AppCompatActivity() {
     private fun refresh(){
         //update icon state
 
-        Log.e("flash", flash.toString())
-        Log.e("flash-stroboscope", stroboscope.toString())
-        Log.e("flash-", sos.toString())
-
         if(!prefHelper.flash) {
             binding.iconFlash.setImageDrawable(this.getDrawable(R.drawable.ic_flashlight_off))
         }
         if (prefHelper.flash) {
             binding.iconFlash.setImageDrawable(this.getDrawable(R.drawable.ic_flashlight_on))
-            //Toast.makeText(context, prefHelper.flash_on.toString(), Toast.LENGTH_LONG).show()
         }
         if(!prefHelper.stroboscope){
             binding.iconStroboscope.setColorFilter(this.getColor(R.color.flash_off))
@@ -255,11 +245,6 @@ class MainActivity : AppCompatActivity() {
         prefHelper.flash = false
 
         super.onBackPressed()
-    }
-
-    private fun releaseCamera() {
-        prefHelper.flash = false
-        torch.flashLightOff()
     }
 }
 

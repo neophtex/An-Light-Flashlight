@@ -40,15 +40,11 @@ class ScreenWidgetProvider : AppWidgetProvider() {
     ) {
         val intent = Intent(context, ScreenActivity::class.java)
 
-        val widgetText = context.getString(R.string.appwidget_text)
-        // Construct the RemoteViews object
         val views = RemoteViews(context.packageName, R.layout.screen_widget_provider)
-        //views.setTextViewText(R.id.appwidget_screen, widgetText)
 
         val pendingIntent = PendingIntent.getActivity(context, appWidgetId, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
         views.setOnClickPendingIntent(R.id.appwidget_screen, pendingIntent)
-
 
         // Instruct the widget manager to update the widget
         appWidgetManager.updateAppWidget(appWidgetId, views)

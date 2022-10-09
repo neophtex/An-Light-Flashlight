@@ -11,7 +11,6 @@ import com.series.anlight.widget.FlashWidgetUpdate
 
 
 class Torch {
-    //var flashLightStatus = false
     private var cameraManager: CameraManager? = null
     private var context: Context? = null
     var speed = 0.0
@@ -49,12 +48,6 @@ class Torch {
 
         //update flashlight home widget
         context?.let { flashWidgetUpdate.updateWidgets(it.applicationContext) }
-    }
-
-    fun flashcolose(){
-        flashLightOff()
-        prefHelper.flash = false
-        context?.let { flashWidgetUpdate.updateWidgets(it) }
     }
 
     fun updateSpeed() {
