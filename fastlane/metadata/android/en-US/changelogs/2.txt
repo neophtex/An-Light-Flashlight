@@ -1,0 +1,2 @@
+* add home screen widget
+* add screen flashlight color saves function
